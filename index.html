@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Vessel Call Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1F3A5F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow column of field cards, dockside-signage header, sticky send bar at the thumb. */
+html{padding-top:env(safe-area-inset-top,0px)}
+:root{
+  --navy:#1F3A5F; --navy-ink:#ffffff;
+  --bg:#EEF1F5; --surface:#ffffff; --fg:#17212E; --muted:#5B6878; --line:#D5DCE5;
+  --enter:#FFF9DB; --enter-line:#E8DB9A; --auto:#EDEDED;
+  --band:#D9E2EF; --go:#2E7D32; --go-ink:#ffffff; --bad:#B3261E;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --navy:#16263D; --bg:#0F151D; --surface:#18212C; --fg:#E6ECF3; --muted:#9AA8B8; --line:#2B3949;
+  --enter:#2E2A14; --enter-line:#5A5126; --auto:#222B36; --band:#22334A; --go:#3E9B44; --bad:#F2867E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --navy:#16263D; --bg:#0F151D; --surface:#18212C; --fg:#E6ECF3; --muted:#9AA8B8; --line:#2B3949;
+  --enter:#2E2A14; --enter-line:#5A5126; --auto:#222B36; --band:#22334A; --go:#3E9B44; --bad:#F2867E; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.4;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--navy)}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--navy);color:var(--navy-ink)}
+header .wrap{padding-block:18px 16px;display:flex;flex-direction:column;gap:2px}
+.eyebrow{font-family:var(--display);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:12px;opacity:.75}
+h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;line-height:1.1;text-wrap:balance}
+header p{margin:6px 0 0;font-size:13px;opacity:.8}
+main .wrap{padding-block:14px 120px;display:flex;flex-direction:column;gap:14px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+section > h2{margin:0;background:var(--band);font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px}
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.rows > .row:first-child{border-top:0}
+.row label,.lbl{font-weight:600;font-size:15px;min-width:0}
+.row .ctl{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.row .sub{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--enter);border:1px solid var(--enter-line);border-radius:7px;padding:9px 10px;min-width:0}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+:root:not([data-theme="light"]) input:focus-visible{outline-color:#8FB3E0}
+input.time{width:5.2em;font-family:var(--mono);font-weight:600;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+input.num{width:5.2em;text-align:center;font-variant-numeric:tabular-nums}
+input.bad{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.full{width:100%}
+textarea{width:100%;min-height:96px;resize:vertical}
+.btn-now{font:600 12px var(--display);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:7px;padding:9px 8px;cursor:pointer}
+.btn-note{font:500 13px var(--body);background:none;border:0;color:var(--muted);padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.note{flex:1 1 100%;font-size:14px}
+.dur{font-family:var(--mono);font-size:13px;background:var(--auto);border-radius:5px;padding:3px 7px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.dur.empty{color:var(--muted)}
+.auto{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.auto .dur{font-size:15px;padding:5px 10px}
+.field{display:flex;flex-direction:column;gap:5px;padding:10px 14px;border-top:1px solid var(--line)}
+.rows > .field:first-child{border-top:0}
+.field label{font-weight:600;font-size:14px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
+.pair .field{padding:0;border:0}
+.delay{display:flex;flex-direction:column;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
+.delay .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.delay .top .lbl{flex:1 1 auto}
+.delay .top span.to{color:var(--muted);font-size:13px}
+.hint{font-size:13px;color:var(--muted);margin:0;padding:0 2px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);padding:0 2px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px;border:1px solid var(--line)}
+.sendbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
+.sendbar .wrap{padding-block:10px;display:flex;gap:8px;align-items:center}
+.btn-send{flex:1;font:700 17px var(--display);letter-spacing:.08em;text-transform:uppercase;background:var(--go);color:var(--go-ink);border:0;border-radius:9px;padding:14px;cursor:pointer}
+.btn-send:disabled{opacity:.6}
+.btn-ghost{font:600 14px var(--display);letter-spacing:.06em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--fg);border-radius:9px;padding:13px 12px;cursor:pointer}
+.panel{position:fixed;inset:0;background:rgba(10,16,24,.55);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);color:var(--fg);width:100%;max-width:640px;border-radius:14px 14px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;max-height:90%;overflow:auto}
+.sheet h3{font-family:var(--display);font-size:20px;margin:0}
+.sheet ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.copyline{display:flex;gap:8px;align-items:center}
+.copyline code{flex:1;min-width:0;overflow-wrap:anywhere;font-family:var(--mono);font-size:13px;background:var(--auto);padding:8px;border-radius:6px;user-select:all}
+.sheet .actions{display:flex;gap:8px;flex-wrap:wrap}
+.sheet .actions > *{flex:1 1 140px;text-align:center;text-decoration:none}
+.err{color:var(--bad);font-weight:600;font-size:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:14px;z-index:30;max-width:90%}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.4}}}
+</style>
+</head><body>
+
+<header><div class="wrap">
+  <span class="eyebrow">SSA Cruise · Operations</span>
+  <h1>Vessel Call Report</h1>
+  <p>Times are 24-hour HHMM (type 706 for 07:06). Tap NOW to stamp the current time.</p>
+</div></header>
+
+<main><form id="f" class="wrap" novalidate>
+  <div class="legend"><span><i style="background:var(--enter)"></i>You enter</span><span><i style="background:var(--auto)"></i>Calculated</span></div>
+
+  <section><h2>Call details</h2><div class="rows">
+    <div class="field"><label for="vessel">Vessel</label><input id="vessel" class="full" autocapitalize="characters" autocomplete="off" placeholder="e.g. EURODAM"></div>
+    <div class="pair">
+      <div class="field"><label for="date">Date</label><input id="date" type="date" class="full"></div>
+      <div class="field"><label for="berth">Berth</label><input id="berth" class="full" autocapitalize="characters" autocomplete="off" placeholder="e.g. B-1"></div>
+    </div>
+    <div class="field"><label for="manager">Operation Labor Manager</label><input id="manager" class="full" autocomplete="name"></div>
+  </div></section>
+
+  <div id="milestones"></div>
+
+  <section><h2>Delays</h2><div class="rows" id="delays"></div>
+    <div class="auto"><span class="lbl">Total Delay Time</span><span class="dur" id="d_total">0:00</span></div>
+  </section>
+
+  <section><h2>Key times (auto)</h2><div class="rows">
+    <div class="auto"><span>Turnaround (last off → first on)</span><span class="dur" id="k_turn">–</span></div>
+    <div class="auto"><span>On board → last bag loaded</span><span class="dur" id="k_board">–</span></div>
+  </div></section>
+
+  <section><h2>General remarks</h2><div class="rows"><div class="field"><textarea id="remarks" aria-label="General remarks"></textarea></div></div></section>
+
+  <section><h2>Email</h2><div class="rows">
+    <div class="field"><label for="to">Agent email (To)</label><input id="to" type="email" class="full" autocomplete="off" inputmode="email"></div>
+    <div class="field"><label for="cc">CC (always copied)</label><input id="cc" type="email" class="full" autocomplete="off" inputmode="email"></div>
+  </div></section>
+
+  <p class="hint">Your entries are kept on this phone until you tap New report. Agent, CC and manager are remembered for next time.</p>
+</form></main>
+
+<div class="sendbar"><div class="wrap">
+  <button type="button" class="btn-ghost" id="btnNew">New report</button>
+  <button type="button" class="btn-send" id="btnSend">Email report</button>
+</div></div>
+
+<div class="panel" id="panel" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pTitle" id="sheet"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const DRAFT='vcr.draft.v1', PREFS='vcr.prefs.v1';
+const DEFAULTS={to:'Marine Operations <Marineops@pshinc.net>',cc:'sdcruiseops@ssamarine.com'};
+
+/* ---------- form model (mirrors the sheet rows) ---------- */
+const SECTIONS=[
+  {title:null,rows:[{id:'onboard',label:'Vessel On Board',kind:'time'}]},
+  {title:'Debark',rows:[{id:'offFirst',label:'First Bag Discharged',kind:'time'},{id:'offLast',label:'Last Bag Discharged',kind:'time',dur:['offFirst','offLast']}]},
+  {title:'Embark',rows:[{id:'onFirst',label:'First Bag Loaded',kind:'time'},{id:'onLast',label:'Last Bag Loaded',kind:'time',dur:['onFirst','onLast']}]},
+  {title:'Stores / Trash',rows:[{id:'trash',label:'Trash Complete',kind:'time'},{id:'stores',label:'Stores to be loaded?',kind:'yesno'},
+    {id:'palFirst',label:'First Pallet Loaded',kind:'timeNA'},{id:'palLast',label:'Last Pallet Loaded',kind:'timeNA',dur:['palFirst','palLast']},{id:'pallets',label:'Estimated Pallets',kind:'int'}]},
+  {title:'Manning',rows:[{id:'heavy',label:'Heavy Lifts',kind:'int'},{id:'cl',label:'CL Lifts',kind:'int'},{id:'porters',label:'Porters (0700)',kind:'int'},{id:'manning',label:'Total Manning',kind:'int'}]}
+];
+const DELAYS=[1,2,3,4];
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function rowHTML(r){
+  let ctl='';
+  if(r.kind==='time'||r.kind==='timeNA'){
+    ctl=`<input id="${r.id}" class="time" inputmode="${r.kind==='timeNA'?'text':'numeric'}" maxlength="${r.kind==='timeNA'?4:5}" placeholder="HHMM" autocomplete="off" data-kind="${r.kind}"><button type="button" class="btn-now" data-now="${r.id}">Now</button>`;
+  }else if(r.kind==='int'){
+    ctl=`<input id="${r.id}" class="num" type="number" inputmode="numeric" min="0" step="1">`;
+  }else if(r.kind==='yesno'){
+    ctl=`<select id="${r.id}"><option value=""></option><option>Yes</option><option>No</option></select>`;
+  }
+  const dur=r.dur?`<span class="dur empty" id="dur_${r.id}" title="Duration">–</span>`:'';
+  return `<div class="row"><label for="${r.id}">${esc(r.label)}</label><div class="ctl">${ctl}</div>
+    <div class="sub">${dur}<button type="button" class="btn-note" data-note="${r.id}">Add note</button><input id="note_${r.id}" class="note" placeholder="Note" hidden aria-label="Note for ${esc(r.label)}"></div></div>`;
+}
+$('#milestones').outerHTML=SECTIONS.map(s=>`<section>${s.title?`<h2>${esc(s.title)}</h2>`:'<h2>Arrival</h2>'}<div class="rows">${s.rows.map(rowHTML).join('')}</div></section>`).join('');
+$('#delays').innerHTML=DELAYS.map(n=>`<div class="delay"><div class="top"><span class="lbl">Delay ${n}</span>
+  <input id="dS${n}" class="time" inputmode="numeric" maxlength="5" placeholder="Start" autocomplete="off" aria-label="Delay ${n} start" data-kind="time"><span class="to">to</span>
+  <input id="dE${n}" class="time" inputmode="numeric" maxlength="5" placeholder="End" autocomplete="off" aria-label="Delay ${n} end" data-kind="time">
+  <span class="dur empty" id="dur_d${n}">–</span></div>
+  <input id="dR${n}" class="full" placeholder="Reason" aria-label="Delay ${n} reason"></div>`).join('');
+
+const ALL_IDS=['vessel','date','berth','manager','remarks','to','cc',
+  ...SECTIONS.flatMap(s=>s.rows.flatMap(r=>[r.id,'note_'+r.id])),
+  ...DELAYS.flatMap(n=>['dS'+n,'dE'+n,'dR'+n])];
+
+/* ---------- time math (same as the Excel formulas) ---------- */
+function parseTime(v){ // -> minutes or null; 'NA' -> 'NA'; invalid -> NaN
+  v=String(v||'').trim(); if(!v) return null;
+  if(/^na$/i.test(v)) return 'NA';
+  v=v.replace(':','');
+  if(!/^\d{1,4}$/.test(v)) return NaN;
+  const n=+v, h=Math.floor(n/100), m=n%100;
+  if(h>23||m>59) return NaN;
+  return h*60+m;
+}
+const fmtHHMM=min=>String(Math.floor(min/60)).padStart(2,'0')+String(min%60).padStart(2,'0');
+const fmtDur=min=>Math.floor(min/60)+':'+String(min%60).padStart(2,'0');
+function span(a,b){const x=parseTime(val(a)),y=parseTime(val(b));if(typeof x!=='number'||typeof y!=='number'||isNaN(x)||isNaN(y))return null;return((y-x)%1440+1440)%1440;}
+function val(id){const el=document.getElementById(id);return el?el.value:''}
+
+function recalc(){
+  SECTIONS.forEach(s=>s.rows.forEach(r=>{ if(r.dur) setDur('dur_'+r.id,span(...r.dur)); }));
+  let tot=0; DELAYS.forEach(n=>{const d=span('dS'+n,'dE'+n); setDur('dur_d'+n,d); if(d!=null) tot+=d;});
+  $('#d_total').textContent=fmtDur(tot);
+  setDur('k_turn',span('offLast','onFirst'));
+  setDur('k_board',span('onboard','onLast'));
+}
+function setDur(id,m){const el=document.getElementById(id);el.textContent=m==null?'–':fmtDur(m);el.classList.toggle('empty',m==null)}
+
+function normTime(el){
+  const t=parseTime(el.value);
+  if(t===null){el.value='';el.classList.remove('bad');return true}
+  if(t==='NA'){ if(el.dataset.kind==='timeNA'){el.value='NA';el.classList.remove('bad');return true} el.classList.add('bad');return false}
+  if(isNaN(t)){el.classList.add('bad');return false}
+  el.value=fmtHHMM(t);el.classList.remove('bad');return true;
+}
+
+/* ---------- storage (per phone) ---------- */
+function load(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function collect(){const o={};ALL_IDS.forEach(id=>o[id]=val(id));return o}
+function apply(o){ALL_IDS.forEach(id=>{if(o&&o[id]!=null){const el=document.getElementById(id);el.value=o[id]}});
+  document.querySelectorAll('input.note').forEach(n=>{if(n.value){n.hidden=false;const b=document.querySelector(`[data-note="${n.id.slice(5)}"]`);if(b)b.hidden=true}})}
+let saveT;function saveSoon(){clearTimeout(saveT);saveT=setTimeout(()=>{const d=collect();store(DRAFT,d);store(PREFS,{to:d.to,cc:d.cc,manager:d.manager})},300)}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fresh(){const p=load(PREFS)||{};ALL_IDS.forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('input.note').forEach(n=>n.hidden=true);document.querySelectorAll('[data-note]').forEach(b=>b.hidden=false);
+  document.querySelectorAll('.bad').forEach(e=>e.classList.remove('bad'));
+  $('#to').value=p.to??DEFAULTS.to;$('#cc').value=p.cc??DEFAULTS.cc;$('#manager').value=p.manager||'';$('#date').value=today();recalc();}
+
+fresh(); const draft=load(DRAFT); if(draft) apply(draft); recalc();
+
+/* ---------- events ---------- */
+const form=$('#f');
+form.addEventListener('submit',e=>e.preventDefault());
+form.addEventListener('input',()=>{ recalc(); saveSoon(); });
+form.addEventListener('change',e=>{
+  if(e.target.id==='stores'&&e.target.value==='No'){['palFirst','palLast'].forEach(id=>{const el=document.getElementById(id);if(!el.value)el.value='NA'}); if(!$('#pallets').value)$('#pallets').value='0'; recalc(); saveSoon();}
+});
+form.addEventListener('focusout',e=>{ if(e.target.classList.contains('time')){normTime(e.target);recalc();saveSoon();} });
+form.addEventListener('click',e=>{
+  const now=e.target.closest('[data-now]'); if(now){const d=new Date();const el=document.getElementById(now.dataset.now);el.value=String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');el.classList.remove('bad');recalc();saveSoon();return}
+  const nb=e.target.closest('[data-note]'); if(nb){const n=document.getElementById('note_'+nb.dataset.note);n.hidden=false;nb.hidden=true;n.focus()}
+});
+
+/* ---------- PDF (same layout as the sheet's print area) ---------- */
+function usDate(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return`${m}/${d}/${y}`}
+function cleanName(s){return s.replace(/[\\/:*?"<>|]/g,'-')}
+function buildPdf(d){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt',format:'letter'});
+  const L=40,W=532,R=L+W, colB=200,colC=72,colD=72,colE=W-colB-colC-colD;
+  const xC=L+colB,xD=xC+colC,xE=xD+colD;
+  const NAVY=[31,58,95],BAND=[217,226,239],GREY=[237,237,237],ENTER=[255,249,219],LINE=[180,188,200];
+  let y=40;
+  doc.setLineWidth(.5);doc.setDrawColor(...LINE);
+  const box=(x,yy,w,h,fill)=>{if(fill){doc.setFillColor(...fill);doc.rect(x,yy,w,h,'FD')}else doc.rect(x,yy,w,h)};
+  const txt=(s,x,yy,o={})=>{doc.setFont('helvetica',o.bold?'bold':'normal');doc.setFontSize(o.size||9.5);doc.setTextColor(...(o.color||[23,33,46]));doc.text(String(s??''),x,yy,o.align?{align:o.align}:undefined)};
+  // title
+  doc.setFillColor(...NAVY);doc.rect(L,y,W,26,'F');txt('SSA CRUISE – Vessel Call Operations Report',L+W/2,y+17,{bold:1,size:13,color:[255,255,255],align:'center'});y+=36;
+  // header fields
+  const hdr=(label,value,x,w,lw)=>{txt(label,x+4,y+13,{bold:1});box(x+lw,y,w-lw,19,ENTER);txt(value,x+lw+5,y+13)};
+  hdr('Vessel',d.vessel,L,W,colB);y+=21;
+  hdr('Date',usDate(d.date),L,colB+colC,colB);txt('Berth',xD+4,y+13,{bold:1});box(xE,y,colE,19,ENTER);txt(d.berth,xE+5,y+13);y+=21;
+  hdr('Operation Labor Manager',d.manager,L,W,colB);y+=29;
+  // table head
+  doc.setFillColor(...NAVY);doc.rect(L,y,W,20,'F');
+  [['Milestone',L],['Time (HHMM)',xC],['Duration',xD],['Notes',xE]].forEach(([t,x])=>txt(t,x+4,y+13.5,{bold:1,color:[255,255,255]}));y+=20;
+  const band=t=>{box(L,y,W,18,BAND);txt(t.toUpperCase(),L+4,y+12.5,{bold:1});y+=18};
+  const line=(label,c,dd,e,o={})=>{
+    doc.setFontSize(9.5);const notes=e?doc.splitTextToSize(String(e),colE-8):[];const h=Math.max(18,notes.length*11+7);
+    box(L,y,colB,h);box(xC,y,colC,h,o.cAuto?GREY:(o.cEnter===false?null:ENTER));box(xD,y,colD,h,o.dEnter?ENTER:(o.dAuto?GREY:null));box(xE,y,colE,h,o.eEnter===false?null:ENTER);
+    txt(label,L+4,y+12.5,{bold:o.bold!==false});txt(c??'',xC+colC/2,y+12.5,{align:'center',bold:o.cAuto});txt(dd??'',xD+colD/2,y+12.5,{align:'center',bold:o.dAuto});
+    if(notes.length){doc.setFont('helvetica','normal');doc.setTextColor(23,33,46);doc.text(notes,xE+4,y+12.5)}
+    y+=h};
+  const S=id=>span(...id)==null?'':fmtDur(span(...id));
+  SECTIONS.forEach(s=>{ if(s.title) band(s.title); s.rows.forEach(r=>line(r.label,d[r.id],r.dur?S(r.dur):'',d['note_'+r.id],{dAuto:!!r.dur})); });
+  band('Delays   (start / end time, reason in Notes)');
+  let tot=0;DELAYS.forEach(n=>{const m=span('dS'+n,'dE'+n);if(m!=null)tot+=m;line('Delay '+n,d['dS'+n],d['dE'+n],d['dR'+n],{bold:false,dEnter:true})});
+  line('Total Delay Time',fmtDur(tot),'','',{cAuto:true,eEnter:false});
+  band('Key times (auto)');
+  line('Turnaround (last off → first on)'.replace('→','->'),S(['offLast','onFirst']),'','',{bold:false,cAuto:true,eEnter:false});
+  line('On board -> last bag loaded',S(['onboard','onLast']),'','',{bold:false,cAuto:true,eEnter:false});
+  band('General remarks');
+  doc.setFontSize(9.5);const rem=doc.splitTextToSize(d.remarks||'',W-8);const rh=Math.max(54,rem.length*11+10);
+  if(y+rh>752){doc.addPage();y=40}
+  box(L,y,W,rh,ENTER);if(rem.length){doc.setFont('helvetica','normal');doc.setTextColor(23,33,46);doc.text(rem,L+4,y+13)}
+  doc.setProperties({title:`Vessel Call Report - ${d.vessel} - ${usDate(d.date)}`,author:d.manager||'',subject:'Vessel Call Operations Report'});
+  return doc;
+}
+
+/* ---------- send ---------- */
+const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),2600)};
+function emailOnly(s){const m=String(s).match(/<([^>]+)>/);return(m?m[1]:s).trim()}
+function splitList(s){return String(s||'').split(/[;,]/).map(x=>x.trim()).filter(Boolean)}
+function compose(d){
+  const subject=`Vessel Call Report - ${d.vessel} - ${usDate(d.date)}`;
+  const body=`Hello,\n\nPlease find attached the operations report for ${d.vessel}.\n\nRegards,\n${d.manager}`;
+  const to=splitList(d.to).map(emailOnly).join(';'), cc=splitList(d.cc).map(emailOnly).join(';');
+  const q=(o)=>Object.entries(o).filter(([,v])=>v).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  return{subject,body,to,cc,
+    mailto:`mailto:${to}?${q({cc,subject,body})}`,
+    outlook:`ms-outlook://compose?${q({to,cc,subject,body})}`};
+}
+async function copy(text){try{await navigator.clipboard.writeText(text);return true}catch(e){return false}}
+
+function validate(d){
+  const errs=[];let ok=true;
+  document.querySelectorAll('input.time').forEach(el=>{if(!normTime(el))ok=false});
+  if(!ok) errs.push('Fix the times outlined in red (24-hour HHMM).');
+  if(!d.vessel.trim()) errs.push('Enter the vessel name.');
+  if(!splitList(d.to).length) errs.push("Enter the agent's email address.");
+  return errs;
+}
+
+function sheet(html){$('#sheet').innerHTML=html;$('#panel').hidden=false;}
+$('#panel').addEventListener('click',e=>{if(e.target.id==='panel'||e.target.closest('[data-close]'))$('#panel').hidden=true;
+  const c=e.target.closest('[data-copy]');if(c){copy(c.dataset.copy).then(ok=>toast(ok?'Copied':'Press and hold the text to copy'))}});
+
+let pending=null; // last built pdf
+$('#btnSend').addEventListener('click',async()=>{
+  recalc();const d=collect();const errs=validate(d);recalc();
+  if(errs.length){sheet(`<h3 id="pTitle">Can't send yet</h3>${errs.map(e=>`<p class="err">${esc(e)}</p>`).join('')}<div class="actions"><button class="btn-ghost" data-close>OK</button></div>`);return}
+  const doc=buildPdf(d);const blob=doc.output('blob');
+  const fname=`Vessel Call Report - ${cleanName(d.vessel.trim())} - ${d.date||today()}.pdf`;
+  const m=compose(d);pending={blob,fname,m};
+  const file=new File([blob],fname,{type:'application/pdf'});
+  // Best path: the phone's share sheet straight into Outlook with the PDF attached.
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    const rcpt=[m.to,m.cc].filter(Boolean).join(';');
+    copy(rcpt);
+    try{
+      await navigator.share({files:[file],title:m.subject,text:m.body});
+      sheet(`<h3 id="pTitle">Finish in Outlook</h3><ol><li>The agent and CC addresses are copied. In Outlook, tap <b>To</b> and paste.</li><li>Check the subject, then tap Send.</li></ol>
+        <p class="hint">Subject: ${esc(m.subject)}</p>
+        <div class="copyline"><code>${esc(m.to)}</code><button class="btn-ghost" data-copy="${esc(m.to)}">Copy To</button></div>
+        ${m.cc?`<div class="copyline"><code>${esc(m.cc)}</code><button class="btn-ghost" data-copy="${esc(m.cc)}">Copy CC</button></div>`:''}
+        <div class="copyline"><code>${esc(m.subject)}</code><button class="btn-ghost" data-copy="${esc(m.subject)}">Copy subject</button></div>
+        <div class="actions"><button class="btn-ghost" data-close>Done</button></div>`);
+      return;
+    }catch(e){ if(e&&e.name==='AbortError') return; /* fall through to manual path */ }
+  }
+  manualPath();
+});
+
+async function savePdf(){
+  const {blob,fname}=pending;
+  try{const dl=window.claude&&await window.claude.use('downloads');
+    if(dl){await dl.save({filename:fname,data:blob});toast('PDF saved');return}}catch(e){if(e&&e.code==='declined')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
+}
+function manualPath(){
+  const {m,fname}=pending;
+  sheet(`<h3 id="pTitle">Send in two steps</h3>
+   <ol><li>Save the PDF to your phone.</li><li>Open the Outlook draft (To, CC, subject and message are filled in), tap the paperclip and attach <b>${esc(fname)}</b>.</li></ol>
+   <div class="actions"><button class="btn-send" id="pSave" type="button">1 · Save PDF</button></div>
+   <div class="actions"><a class="btn-ghost" href="${esc(m.outlook)}" target="_top">2 · Outlook draft</a><a class="btn-ghost" href="${esc(m.mailto)}" target="_top">Other mail app</a></div>
+   <div class="copyline"><code>${esc(m.to)}${m.cc?'  ·  CC '+esc(m.cc):''}</code><button class="btn-ghost" data-copy="${esc(m.to)}">Copy To</button></div>
+   <div class="actions"><button class="btn-ghost" data-close>Close</button></div>`);
+  $('#pSave').addEventListener('click',savePdf);
+}
+
+$('#btnNew').addEventListener('click',()=>{
+  sheet(`<h3 id="pTitle">Start a new report?</h3><p>This clears the times, counts and notes. Agent, CC and manager stay filled in.</p>
+   <div class="actions"><button class="btn-ghost" data-close>Keep editing</button><button class="btn-send" id="pClear" type="button">Clear form</button></div>`);
+  $('#pClear').addEventListener('click',()=>{try{localStorage.removeItem(DRAFT)}catch(e){}fresh();$('#panel').hidden=true;window.scrollTo(0,0)});
+});
+})();
+</script>
+
+</body></html>
